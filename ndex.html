@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WV Lavagem e Estética Automotiva</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101820;color:white;font-family:Arial,sans-serif}
+header{background:#087d55;padding:22px;font-size:21px;font-weight:bold}
+main{padding:15px;max-width:800px;margin:auto}
+.card{background:#1d2935;padding:16px;border-radius:12px;margin:12px 0}
+input,select,button{width:100%;padding:13px;margin:6px 0;border-radius:7px;border:1px solid #465565;font-size:15px}
+input,select{background:#101820;color:white}
+button{background:#087d55;color:white;border:0;font-weight:bold}
+nav{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+nav button{background:#263746}
+h2{font-size:19px}
+small{color:#b9c7d2}
+.hidden{display:none}
+.valor{font-size:25px;color:#45d69c;font-weight:bold}
+</style>
+</head>
+<body>
+<header>🚘 WV LAVAGEM E ESTÉTICA AUTOMOTIVA</header>
+<main>
+<section id="login" class="card">
+<h2>Acesso ao sistema</h2>
+<input id="email" type="email" placeholder="Seu e-mail">
+<input id="senha" type="password" placeholder="Sua senha">
+<button onclick="entrar()">ENTRAR</button>
+<button onclick="cadastrar()">CRIAR CONTA</button>
+<p id="msg"></p>
+</section>
+
+<section id="app" class="hidden">
+<div class="card">
+<h2>Bem-vindo à WV!</h2>
+<div id="resumo" class="valor">R$ 0,00</div>
+<small>Saldo do mês</small>
+</div>
+<nav>
+<button onclick="tela('clientes')">Clientes</button>
+<button onclick="tela('veiculos')">Veículos</button>
+<button onclick="tela('servicos')">Serviços</button>
+<button onclick="tela('movimentos')">Entradas e despesas</button>
+<button onclick="tela('historico')">Histórico</button>
+<button onclick="tela('financeiro')">Financeiro</button>
+</nav>
+
+<div id="clientes" class="card">
+<h2>Cadastro de clientes</h2>
+<input id="cnome" placeholder="Nome do cliente">
+<input id="ctel" placeholder="Telefone / WhatsApp">
+<input id="cend" placeholder="Endereço">
+<input id="cobs" placeholder="Observações">
+<button onclick="salvarCliente()">Salvar cliente</button>
+<div id="listaClientes"></div>
+</div>
+
+<div id="veiculos" class="card hidden">
+<h2>Cadastro de veículos</h2>
+<select id="vcliente"></select>
+<input id="vmarca" placeholder="Marca">
+<input id="vmodelo" placeholder="Modelo">
+<input id="vplaca" placeholder="Placa">
+<input id="vcor" placeholder="Cor">
+<button onclick="salvarVeiculo()">Salvar veículo</button>
+<div id="listaVeiculos"></div>
+</div>
+
+<div id="servicos" class="card hidden">
+<h2>Registrar serviço</h2>
+<select id="scliente"></select>
+<select id="sveiculo"></select>
+<input id="sdesc" placeholder="Descrição do serviço">
+<input id="svalor" type="number" step="0.01" placeholder="Valor R$">
+<input id="sdata" type="date">
+<select id="spagamento">
+<option>Pix</option><option>Dinheiro</option>
+<option>Cartão de crédito</option><option>Cartão de débito</option>
+</select>
+<select id="sstatus">
+<option value="concluido">Concluído</option>
+<option value="pendente">Pendente</option>
+</select>
+<button onclick="salvarServico()">Salvar serviço</button>
+<div id="listaServicos"></div>
+</div>
+
+<div id="movimentos" class="card hidden">
+<h2>Entradas e despesas</h2>
+<select id="mtipo"><option value="entrada">Entrada</option><option value="saida">Despesa</option></select>
+<input id="mdesc" placeholder="Descrição">
+<input id="mcat" placeholder="Categoria">
+<input id="mvalor" type="number" step="0.01" placeholder="Valor R$">
+<input id="mdata" type="date">
+<select id="mpag">
+<option>Pix</option><option>Dinheiro</option>
+<option>Cartão de crédito</option><option>Cartão de débito</option>
+</select>
+<button onclick="salvarMovimento()">Salvar movimentação</button>
+</div>
+
+<div id="historico" class="card hidden">
+<h2>Histórico de serviços</h2>
+<div id="historicoLista"></div>
+</div>
+
+<div id="financeiro" class="card hidden">
+<h2>Resumo financeiro</h2>
+<div id="financeiroLista"></div>
+</div>
+
+<button onclick="sair()">SAIR</button>
+</section>
+</main>
+
+<script>
+// CONFIGURE A CONEXÃO SUPABASE NESTES DOIS CAMPOS
+const SUPABASE_URL = "COLOQUE_SUA_URL";
+const SUPABASE_KEY = "COLOQUE_SUA_CHAVE_ANON";
+
+const db = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let clientes=[],veiculos=[],servicos=[],movimentos=[];
+
+function dataHoje(){
+ return new Date().toLocaleDateString('en-CA');
+}
+document.getElementById('sdata').value=dataHoje();
+document.getElementById('mdata').value=dataHoje();
+
+async function entrar(){
+ const {error}=await db.auth.signInWithPassword({
+ email:email.value,password:senha.value
+ });
+ if(error){msg.innerText=error.message;return}
+ await iniciar();
+}
+async function cadastrar(){
+ const {error}=await db.auth.signUp({
+ email:email.value,password:senha.value
+ });
+ msg.innerText=error?error.message:"Confira seu e-mail para confirmar a conta.";
+}
+async function iniciar(){
+ login.classList.add('hidden');
+ app.classList.remove('hidden');
+ await carregar();
+}
+async function sair(){
+ await db.auth.signOut();
+ app.classList.add('hidden');
+ login.classList.remove('hidden');
+}
+function tela(id){
+ document.querySelectorAll('#app > .card').forEach(x=>x.classList.add('hidden'));
+ document.getElementById(id).classList.remove('hidden');
+ if(id==='financeiro')financeiro();
+ if(id==='historico')historico();
+}
+async function carregar(){
+ const r=await db.auth.getUser();
+ if(!r.data.user)return;
+ const [a,b,c,d]=await Promise.all([
+ db.from('clientes').select('*').order('nome'),
+ db.from('veiculos').select('*'),
+ db.from('servicos').select('*').order('data',{ascending:false}),
+ db.from('movimentacoes').select('*').order('data',{ascending:false})
+ ]);
+ if(a.error||b.error||c.error||d.error){
+ alert("Erro ao carregar dados: "+[a.error,b.error,c.error,d.error].filter(Boolean).map(x=>x.message).join("; "));
+ return;
+ }
+ clientes=a.data||[];
+ veiculos=b.data||[];
+ servicos=c.data||[];
+ movimentos=d.data||[];
+ atualizar();
+}
+function atualizar(){
+ listaClientes.innerHTML=clientes.map(x=>`<p>${x.nome} - ${x.telefone||''}</p>`).join('');
+ listaVeiculos.innerHTML=veiculos.map(x=>`<p>${x.marca||''} ${x.modelo} - ${x.placa}</p>`).join('');
+ vcliente.innerHTML=scliente.innerHTML=clientes.map(x=>`<option value="${x.id}">${x.nome}</option>`).join('');
+ sveiculo.innerHTML=veiculos.map(x=>`<option value="${x.id}">${x.modelo} - ${x.placa}</option>`).join('');
+ listaServicos.innerHTML=servicos.map(x=>`<p>${x.descricao} - R$ ${x.valor} (${x.status})</p>`).join('');
+ financeiro();
+}
+async function inserir(tabela,dados){
+ const {error}=await db.from(tabela).insert(dados);
+ if(error){alert(error.message);return false}
+ await carregar();return true;
+}
+async function salvarCliente(){
+ if(!cnome.value.trim())return alert("Informe o nome.");
+ await inserir('clientes',{nome:cnome.value,telefone:ctel.value,endereco:cend.value,observacoes:cobs.value});
+}
+async function salvarVeiculo(){
+ if(!vcliente.value)return alert("Cadastre um cliente primeiro.");
+ await inserir('veiculos',{cliente_id:vcliente.value,marca:vmarca.value,modelo:vmodelo.value,placa:vplaca.value,cor:vcor.value});
+}
+async function salvarServico(){
+ if(!scliente.value)return alert("Cadastre um cliente primeiro.");
+ await inserir('servicos',{cliente_id:scliente.value,veiculo_id:sveiculo.value||null,descricao:sdesc.value,valor:Number(svalor.value),data:sdata.value,status:sstatus.value,pagamento:spagamento.value});
+}
+async function salvarMovimento(){
+ if(!mdesc.value||!Number(mvalor.value))return alert("Preencha descrição e valor.");
+ await inserir('movimentacoes',{tipo:mtipo.value,descricao:mdesc.value,categoria:mcat.value,valor:Number(mvalor.value),data:mdata.value,pagamento:mpag.value});
+}
+function financeiro(){
+ let mes=dataHoje().slice(0,7);
+ let entradas=movimentos.filter(x=>x.tipo==='entrada'&&x.data?.startsWith(mes)).reduce((s,x)=>s+Number(x.valor),0);
+ let saidas=movimentos.filter(x=>x.tipo==='saida'&&x.data?.startsWith(mes)).reduce((s,x)=>s+Number(x.valor),0);
+ resumo.innerText='R$ '+(entradas-saidas).toFixed(2).replace('.',',');
+ financeiroLista.innerHTML=`<p>Entradas: R$ ${entradas.toFixed(2)}</p><p>Despesas: R$ ${saidas.toFixed(2)}</p><h2>Lucro: R$ ${(entradas-saidas).toFixed(2)}</h2>`;
+}
+function historico(){
+ historicoLista.innerHTML=servicos.map(x=>`<p>${x.data} | ${x.descricao} | R$ ${x.valor} | ${x.status}</p>`).join('');
+}
+db.auth.getSession().then(({data})=>{if(data.session)iniciar()});
+</script>
+</body>
+  </html>
+  
