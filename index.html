@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,26 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WV Lavagem e Estética Automotiva</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101820;color:white;font-family:Arial,sans-serif}
-header{background:#087d55;padding:22px;font-size:21px;font-weight:bold}
-main{padding:15px;max-width:800px;margin:auto}
+header{background:#087d55;padding:20px;font-size:20px;font-weight:bold;text-align:center}
+main{padding:15px;max-width:850px;margin:auto}
 .card{background:#1d2935;padding:16px;border-radius:12px;margin:12px 0}
 input,select,button{width:100%;padding:13px;margin:6px 0;border-radius:7px;border:1px solid #465565;font-size:15px}
 input,select{background:#101820;color:white}
-button{background:#087d55;color:white;border:0;font-weight:bold}
-nav{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button{background:#087d55;color:white;border:0;font-weight:bold;cursor:pointer}
+nav{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}
 nav button{background:#263746}
 h2{font-size:19px}
 small{color:#b9c7d2}
-.hidden{display:none}
+.hidden{display:none!important}
 .valor{font-size:25px;color:#45d69c;font-weight:bold}
+.item{background:#263746;padding:10px;margin:8px 0;border-radius:7px;overflow-wrap:anywhere}
+#msg{color:#ffd166}
 </style>
 </head>
+
 <body>
 <header>🚘 WV LAVAGEM E ESTÉTICA AUTOMOTIVA</header>
+
 <main>
+
 <section id="login" class="card">
 <h2>Acesso ao sistema</h2>
 <input id="email" type="email" placeholder="Seu e-mail">
@@ -36,11 +41,13 @@ small{color:#b9c7d2}
 </section>
 
 <section id="app" class="hidden">
+
 <div class="card">
 <h2>Bem-vindo à WV!</h2>
 <div id="resumo" class="valor">R$ 0,00</div>
-<small>Saldo do mês</small>
+<small>Saldo das movimentações deste mês</small>
 </div>
+
 <nav>
 <button onclick="tela('clientes')">Clientes</button>
 <button onclick="tela('veiculos')">Veículos</button>
@@ -79,8 +86,10 @@ small{color:#b9c7d2}
 <input id="svalor" type="number" step="0.01" placeholder="Valor R$">
 <input id="sdata" type="date">
 <select id="spagamento">
-<option>Pix</option><option>Dinheiro</option>
-<option>Cartão de crédito</option><option>Cartão de débito</option>
+<option>Pix</option>
+<option>Dinheiro</option>
+<option>Cartão de crédito</option>
+<option>Cartão de débito</option>
 </select>
 <select id="sstatus">
 <option value="concluido">Concluído</option>
@@ -92,14 +101,19 @@ small{color:#b9c7d2}
 
 <div id="movimentos" class="card hidden">
 <h2>Entradas e despesas</h2>
-<select id="mtipo"><option value="entrada">Entrada</option><option value="saida">Despesa</option></select>
+<select id="mtipo">
+<option value="entrada">Entrada</option>
+<option value="saida">Despesa</option>
+</select>
 <input id="mdesc" placeholder="Descrição">
 <input id="mcat" placeholder="Categoria">
 <input id="mvalor" type="number" step="0.01" placeholder="Valor R$">
 <input id="mdata" type="date">
 <select id="mpag">
-<option>Pix</option><option>Dinheiro</option>
-<option>Cartão de crédito</option><option>Cartão de débito</option>
+<option>Pix</option>
+<option>Dinheiro</option>
+<option>Cartão de crédito</option>
+<option>Cartão de débito</option>
 </select>
 <button onclick="salvarMovimento()">Salvar movimentação</button>
 </div>
@@ -122,85 +136,109 @@ small{color:#b9c7d2}
 const SUPABASE_URL = "https://sryuwgmwrchwpdecdrlr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_rpgId6KOB4tEUsG_COGtEg_tnYya1we";
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
 
 let clientes = [];
 let veiculos = [];
 let servicos = [];
 let movimentos = [];
 
-const $ = id => document.getElementById(id);
-
-function dataHoje() {
+function dataHoje(){
     const d = new Date();
-    const ano = d.getFullYear();
-    const mes = String(d.getMonth() + 1).padStart(2, '0');
-    const dia = String(d.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
+    return d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0');
 }
 
-function mostrarMensagem(texto) {
-    $('msg').innerText = texto;
+function mostrarMensagem(texto){
+    $('msg').textContent = texto;
 }
 
-async function entrar() {
+function escapar(valor){
+    return String(valor ?? '').replace(/[&<>"']/g, c => ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+    })[c]);
+}
+
+function dinheiro(valor){
+    return Number(valor || 0).toLocaleString('pt-BR',{
+        style:'currency',
+        currency:'BRL'
+    });
+}
+
+async function entrar(){
     const email = $('email').value.trim();
     const senha = $('senha').value;
 
-    if (!email || !senha) {
+    if(!email || !senha){
         mostrarMensagem('Informe seu e-mail e sua senha.');
         return;
     }
 
     mostrarMensagem('Entrando...');
 
-    const { error } = await db.auth.signInWithPassword({
-        email: email,
-        password: senha
-    });
+    try{
+        const {error} = await db.auth.signInWithPassword({
+            email:email,
+            password:senha
+        });
 
-    if (error) {
-        mostrarMensagem('Erro ao entrar: ' + error.message);
-        return;
+        if(error){
+            mostrarMensagem('Erro ao entrar: ' + error.message);
+            return;
+        }
+
+        await iniciar();
+    }catch(e){
+        mostrarMensagem('Erro: ' + e.message);
     }
-
-    await iniciar();
 }
 
-async function cadastrar() {
+async function cadastrar(){
     const email = $('email').value.trim();
     const senha = $('senha').value;
 
-    if (!email || !senha) {
+    if(!email || !senha){
         mostrarMensagem('Informe seu e-mail e sua senha.');
         return;
     }
 
-    if (senha.length < 6) {
+    if(senha.length < 6){
         mostrarMensagem('A senha precisa ter pelo menos 6 caracteres.');
         return;
     }
 
-    mostrarMensagem('Criando sua conta...');
+    mostrarMensagem('Criando conta...');
 
-    const { data, error } = await db.auth.signUp({
-        email: email,
-        password: senha
-    });
+    try{
+        const {data,error} = await db.auth.signUp({
+            email:email,
+            password:senha
+        });
 
-    if (error) {
-        mostrarMensagem('Erro ao cadastrar: ' + error.message);
-        return;
-    }
+        if(error){
+            mostrarMensagem('Erro ao cadastrar: ' + error.message);
+            return;
+        }
 
-    if (data.session) {
-        await iniciar();
-    } else {
-        mostrarMensagem('Conta criada! Confira seu e-mail para confirmar o cadastro antes de entrar.');
+        if(data.session){
+            await iniciar();
+        }else{
+            mostrarMensagem('Conta criada! Confira seu e-mail para confirmar o cadastro.');
+        }
+    }catch(e){
+        mostrarMensagem('Erro: ' + e.message);
     }
 }
 
-async function iniciar() {
+async function iniciar(){
     $('login').classList.add('hidden');
     $('app').classList.remove('hidden');
 
@@ -211,10 +249,10 @@ async function iniciar() {
     tela('clientes');
 }
 
-async function sair() {
-    const { error } = await db.auth.signOut();
+async function sair(){
+    const {error} = await db.auth.signOut();
 
-    if (error) {
+    if(error){
         alert('Erro ao sair: ' + error.message);
         return;
     }
@@ -224,197 +262,232 @@ async function sair() {
     mostrarMensagem('Você saiu do sistema.');
 }
 
-function tela(id) {
-    const telas = [
-        'clientes',
-        'veiculos',
-        'servicos',
-        'movimentos',
-        'historico',
-        'financeiro'
+function tela(id){
+    const nomes = [
+        'clientes','veiculos','servicos',
+        'movimentos','historico','financeiro'
     ];
 
-    telas.forEach(nome => {
-        $(nome).classList.toggle('hidden', nome !== id);
+    nomes.forEach(nome=>{
+        $(nome).classList.toggle('hidden',nome !== id);
     });
 }
 
-async function carregar() {
-    const [c, v, s, m] = await Promise.all([
-        db.from('clientes').select('*'),
-        db.from('veiculos').select('*'),
-        db.from('servicos').select('*'),
-        db.from('movimentacoes').select('*')
-    ]);
+async function carregar(){
+    try{
+        const [c,v,s,m] = await Promise.all([
+            db.from('clientes').select('*'),
+            db.from('veiculos').select('*'),
+            db.from('servicos').select('*'),
+            db.from('movimentacoes').select('*')
+        ]);
 
-    if (c.error || v.error || s.error || m.error) {
         const erro = c.error || v.error || s.error || m.error;
-        alert('Erro ao carregar os dados: ' + erro.message);
-        return;
+
+        if(erro){
+            alert('Erro ao carregar dados: ' + erro.message);
+            return;
+        }
+
+        clientes = c.data || [];
+        veiculos = v.data || [];
+        servicos = s.data || [];
+        movimentos = m.data || [];
+
+        atualizar();
+    }catch(e){
+        alert('Erro ao carregar: ' + e.message);
     }
-
-    clientes = c.data || [];
-    veiculos = v.data || [];
-    servicos = s.data || [];
-    movimentos = m.data || [];
-
-    atualizar();
 }
 
-function atualizar() {
-    $('listaClientes').innerHTML = clientes.map(x =>
-        `<p>${x.nome} - ${x.telefone || ''}</p>`
+function atualizar(){
+    $('listaClientes').innerHTML = clientes.map(x=>
+        `<div class="item">${escapar(x.nome)} - ${escapar(x.telefone)}</div>`
     ).join('');
 
-    $('listaVeiculos').innerHTML = veiculos.map(x =>
-        `<p>${x.marca || ''} ${x.modelo || ''} - ${x.placa || ''}</p>`
+    $('listaVeiculos').innerHTML = veiculos.map(x=>
+        `<div class="item">${escapar(x.marca)} ${escapar(x.modelo)} - ${escapar(x.placa)}</div>`
     ).join('');
 
-    const opcoesClientes = clientes.map(x =>
-        `<option value="${x.id}">${x.nome}</option>`
+    const opcoes = clientes.map(x=>
+        `<option value="${escapar(x.id)}">${escapar(x.nome)}</option>`
     ).join('');
 
-    $('vcliente').innerHTML = opcoesClientes;
-    $('scliente').innerHTML = opcoesClientes;
+    $('vcliente').innerHTML = opcoes;
+    $('scliente').innerHTML = opcoes;
 
-    $('sveiculo').innerHTML = veiculos.map(x =>
-        `<option value="${x.id}">${x.modelo || ''} - ${x.placa || ''}</option>`
-    ).join('');
+    atualizarVeiculos();
 
-    $('listaServicos').innerHTML = servicos.map(x =>
-        `<p>${x.descricao || ''} - R$ ${Number(x.valor || 0).toFixed(2)} (${x.status || ''})</p>`
+    $('listaServicos').innerHTML = servicos.map(x=>
+        `<div class="item">${escapar(x.descricao)} - ${dinheiro(x.valor)} (${escapar(x.status)})</div>`
     ).join('');
 
     financeiro();
     historico();
 }
 
-async function inserir(tabela, dados) {
-    const { error } = await db.from(tabela).insert(dados);
+function atualizarVeiculos(){
+    const clienteId = $('scliente').value;
 
-    if (error) {
-        alert('Erro ao salvar: ' + error.message);
-        return false;
-    }
+    const lista = veiculos.filter(x=>
+        !clienteId || String(x.cliente_id) === String(clienteId)
+    );
 
-    alert('Registro salvo com sucesso!');
-    await carregar();
-    return true;
+    $('sveiculo').innerHTML =
+        '<option value="">Selecione o veículo</option>' +
+        lista.map(x=>
+            `<option value="${escapar(x.id)}">${escapar(x.modelo)} - ${escapar(x.placa)}</option>`
+        ).join('');
 }
 
-async function salvarCliente() {
-    if (!$('cnome').value.trim()) {
+$('scliente').addEventListener('change',atualizarVeiculos);
+
+async function inserir(tabela,dados){
+    try{
+        const {error} = await db.from(tabela).insert(dados);
+
+        if(error){
+            alert('Erro ao salvar: ' + error.message);
+            return false;
+        }
+
+        alert('Salvo com sucesso!');
+        await carregar();
+        return true;
+    }catch(e){
+        alert('Erro: ' + e.message);
+        return false;
+    }
+}
+
+async function salvarCliente(){
+    if(!$('cnome').value.trim()){
         alert('Informe o nome do cliente.');
         return;
     }
 
-    await inserir('clientes', {
-        nome: $('cnome').value.trim(),
-        telefone: $('ctel').value,
-        endereco: $('cend').value,
-        observacoes: $('cobs').value
+    const ok = await inserir('clientes',{
+        nome:$('cnome').value.trim(),
+        telefone:$('ctel').value,
+        endereco:$('cend').value,
+        observacoes:$('cobs').value
     });
+
+    if(ok){
+        ['cnome','ctel','cend','cobs'].forEach(id=>$(id).value='');
+    }
 }
 
-async function salvarVeiculo() {
-    if (!$('vcliente').value) {
+async function salvarVeiculo(){
+    if(!$('vcliente').value){
         alert('Cadastre um cliente primeiro.');
         return;
     }
 
-    if (!$('vmodelo').value.trim()) {
+    if(!$('vmodelo').value.trim()){
         alert('Informe o modelo do veículo.');
         return;
     }
 
-    await inserir('veiculos', {
-        cliente_id: $('vcliente').value,
-        marca: $('vmarca').value,
-        modelo: $('vmodelo').value,
-        placa: $('vplaca').value,
-        cor: $('vcor').value
+    const ok = await inserir('veiculos',{
+        cliente_id:$('vcliente').value,
+        marca:$('vmarca').value,
+        modelo:$('vmodelo').value,
+        placa:$('vplaca').value,
+        cor:$('vcor').value
     });
+
+    if(ok){
+        ['vmarca','vmodelo','vplaca','vcor'].forEach(id=>$(id).value='');
+    }
 }
 
-async function salvarServico() {
-    if (!$('scliente').value) {
-        alert('Cadastre um cliente primeiro.');
+async function salvarServico(){
+    if(!$('scliente').value){
+        alert('Selecione um cliente.');
         return;
     }
 
-    if (!$('sdesc').value.trim() || !$('svalor').value) {
-        alert('Informe a descrição e o valor do serviço.');
+    if(!$('sdesc').value.trim() || !$('svalor').value){
+        alert('Informe a descrição e o valor.');
         return;
     }
 
-    await inserir('servicos', {
-        cliente_id: $('scliente').value,
-        veiculo_id: $('sveiculo').value || null,
-        descricao: $('sdesc').value,
-        valor: Number($('svalor').value),
-        data: $('sdata').value,
-        status: $('sstatus').value,
-        pagamento: $('spagamento').value
+    const ok = await inserir('servicos',{
+        cliente_id:$('scliente').value,
+        veiculo_id:$('sveiculo').value || null,
+        descricao:$('sdesc').value,
+        valor:Number($('svalor').value),
+        data:$('sdata').value,
+        status:$('sstatus').value,
+        pagamento:$('spagamento').value
     });
+
+    if(ok){
+        ['sdesc','svalor'].forEach(id=>$(id).value='');
+    }
 }
 
-async function salvarMovimento() {
-    if (!$('mdesc').value.trim() || !$('mvalor').value) {
+async function salvarMovimento(){
+    if(!$('mdesc').value.trim() || !$('mvalor').value){
         alert('Preencha a descrição e o valor.');
         return;
     }
 
-    await inserir('movimentacoes', {
-        tipo: $('mtipo').value,
-        descricao: $('mdesc').value,
-        categoria: $('mcat').value,
-        valor: Number($('mvalor').value),
-        data: $('mdata').value,
-        pagamento: $('mpag').value
+    const ok = await inserir('movimentacoes',{
+        tipo:$('mtipo').value,
+        descricao:$('mdesc').value,
+        categoria:$('mcat').value,
+        valor:Number($('mvalor').value),
+        data:$('mdata').value,
+        pagamento:$('mpag').value
     });
+
+    if(ok){
+        ['mdesc','mcat','mvalor'].forEach(id=>$(id).value='');
+    }
 }
 
-function financeiro() {
-    const mes = dataHoje().slice(0, 7);
+function financeiro(){
+    const mes = dataHoje().slice(0,7);
 
     const entradas = movimentos
-        .filter(x => x.tipo === 'entrada' && String(x.data).startsWith(mes))
-        .reduce((s, x) => s + Number(x.valor || 0), 0);
+        .filter(x=>x.tipo==='entrada' && String(x.data).startsWith(mes))
+        .reduce((s,x)=>s+Number(x.valor || 0),0);
 
     const saidas = movimentos
-        .filter(x => x.tipo === 'saida' && String(x.data).startsWith(mes))
-        .reduce((s, x) => s + Number(x.valor || 0), 0);
+        .filter(x=>x.tipo==='saida' && String(x.data).startsWith(mes))
+        .reduce((s,x)=>s+Number(x.valor || 0),0);
 
-    const saldo = entradas - saidas;
+    const saldo = entradas-saidas;
 
-    $('resumo').innerText = 'R$ ' + saldo.toFixed(2).replace('.', ',');
+    $('resumo').textContent = dinheiro(saldo);
 
     $('financeiroLista').innerHTML =
-        `<p>Entradas: R$ ${entradas.toFixed(2).replace('.', ',')}</p>
-         <p>Despesas: R$ ${saidas.toFixed(2).replace('.', ',')}</p>
-         <h2>Saldo: R$ ${saldo.toFixed(2).replace('.', ',')}</h2>`;
+        `<div class="item">Entradas: ${dinheiro(entradas)}</div>
+         <div class="item">Despesas: ${dinheiro(saidas)}</div>
+         <div class="item">Saldo: ${dinheiro(saldo)}</div>`;
 }
 
-function historico() {
-    $('historicoLista').innerHTML = servicos.map(x =>
-        `<p>${x.data || ''} | ${x.descricao || ''} | R$ ${Number(x.valor || 0).toFixed(2)} | ${x.status || ''}</p>`
+function historico(){
+    $('historicoLista').innerHTML = servicos.map(x=>
+        `<div class="item">${escapar(x.data)} | ${escapar(x.descricao)} | ${dinheiro(x.valor)} | ${escapar(x.status)}</div>`
     ).join('');
 }
 
 $('sdata').value = dataHoje();
 $('mdata').value = dataHoje();
 
-db.auth.getSession().then(({ data, error }) => {
-    if (error) {
+db.auth.getSession().then(({data,error})=>{
+    if(error){
         mostrarMensagem('Erro ao verificar sessão: ' + error.message);
         return;
     }
 
-    if (data.session) {
+    if(data.session){
         iniciar();
     }
-});{data})=>{if(data.session)iniciar()});
+});
 </script>
 </body>
-  </html>
-  
+</html>
