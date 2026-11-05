@@ -134,51 +134,14 @@ document.getElementById('mdata').value=dataHoje();
 
 async function entrar(){
  const {error}=await db.auth.signInWithPassword({
- email:email.value,password:senha.value
+  email:email.value,
+  password:senha.value
  });
- if(error){msg.innerText=error.message;return}
- await iniciar();
-}
-async function cadastrar(){
- const {error}=await db.auth.signUp({
- email:email.value,password:senha.value
- });
- msg.innerText=error?error.message:"Confira seu e-mail para confirmar a conta.";
-}
-async function iniciar(){
- login.classList.add('hidden');
- app.classList.remove('hidden');
- await carregar();
-}
-async function sair(){
- await db.auth.signOut();
- app.classList.add('hidden');
- login.classList.remove('hidden');
-}
-function tela(id){
- document.querySelectorAll('#app > .card').forEach(x=>x.classList.add('hidden'));
- document.getElementById(id).classList.remove('hidden');
- if(id==='financeiro')financeiro();
- if(id==='historico')historico();
-}
-async function carregar(){
- const r=await db.auth.getUser();
- if(!r.data.user)return;
- const [a,b,c,d]=await Promise.all([
- db.from('clientes').select('*').order('nome'),
- db.from('veiculos').select('*'),
- db.from('servicos').select('*').order('data',{ascending:false}),
- db.from('movimentacoes').select('*').order('data',{ascending:false})
- ]);
- if(a.error||b.error||c.error||d.error){
- alert("Erro ao carregar dados: "+[a.error,b.error,c.error,d.error].filter(Boolean).map(x=>x.message).join("; "));
- return;
+ if(error){
+  msg.innerText=error.message;
+  return;
  }
- clientes=a.data||[];
- veiculos=b.data||[];
- servicos=c.data||[];
- movimentos=d.data||[];
- atualizar();
+ await iniciar();
 }
 function atualizar(){
  listaClientes.innerHTML=clientes.map(x=>`<p>${x.nome} - ${x.telefone||''}</p>`).join('');
