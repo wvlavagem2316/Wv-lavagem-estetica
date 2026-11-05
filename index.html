@@ -119,70 +119,301 @@ small{color:#b9c7d2}
 </main>
 
 <script>
-// CONFIGURE A CONEXÃO SUPABASE NESTES DOIS CAMPOS
-const SUPABASE_URL = "COLOQUE_SUA_URL";sb_publishable_rpgId6KOB4tEUsG_COGtEg_tnYya1we
-const SUPABASE_KEY = "COLOQUE_SUA_CHAVE_ANON";
+(const SUPABASE_URL = "https://sryuwgmwrchwpdecdrlr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_rpgId6KOB4tEUsG_COGtEg_tnYya1we";
 
-const db = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let clientes=[],veiculos=[],servicos=[],movimentos=[];https://sryuwgmwrchwpdecdrlr.supabase.co/rest/v1/
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function dataHoje(){
- return new Date().toLocaleDateString('en-CA');
-}
-document.getElementById('sdata').value=dataHoje();
-document.getElementById('mdata').value=dataHoje();
+let clientes = [];
+let veiculos = [];
+let servicos = [];
+let movimentos = [];
 
-async function entrar(){
- const {error}=await db.auth.signInWithPassword({
-  email:email.value,
-  password:senha.value
- });
- if(error){
-  msg.innerText=error.message;
-  return;
- }
- await iniciar();
+const $ = id => document.getElementById(id);
+
+function dataHoje() {
+    const d = new Date();
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
 }
-function atualizar(){
- listaClientes.innerHTML=clientes.map(x=>`<p>${x.nome} - ${x.telefone||''}</p>`).join('');
- listaVeiculos.innerHTML=veiculos.map(x=>`<p>${x.marca||''} ${x.modelo} - ${x.placa}</p>`).join('');
- vcliente.innerHTML=scliente.innerHTML=clientes.map(x=>`<option value="${x.id}">${x.nome}</option>`).join('');
- sveiculo.innerHTML=veiculos.map(x=>`<option value="${x.id}">${x.modelo} - ${x.placa}</option>`).join('');
- listaServicos.innerHTML=servicos.map(x=>`<p>${x.descricao} - R$ ${x.valor} (${x.status})</p>`).join('');
- financeiro();
+
+function mostrarMensagem(texto) {
+    $('msg').innerText = texto;
 }
-async function inserir(tabela,dados){
- const {error}=await db.from(tabela).insert(dados);
- if(error){alert(error.message);return false}
- await carregar();return true;
+
+async function entrar() {
+    const email = $('email').value.trim();
+    const senha = $('senha').value;
+
+    if (!email || !senha) {
+        mostrarMensagem('Informe seu e-mail e sua senha.');
+        return;
+    }
+
+    mostrarMensagem('Entrando...');
+
+    const { error } = await db.auth.signInWithPassword({
+        email: email,
+        password: senha
+    });
+
+    if (error) {
+        mostrarMensagem('Erro ao entrar: ' + error.message);
+        return;
+    }
+
+    await iniciar();
 }
-async function salvarCliente(){
- if(!cnome.value.trim())return alert("Informe o nome.");
- await inserir('clientes',{nome:cnome.value,telefone:ctel.value,endereco:cend.value,observacoes:cobs.value});
+
+async function cadastrar() {
+    const email = $('email').value.trim();
+    const senha = $('senha').value;
+
+    if (!email || !senha) {
+        mostrarMensagem('Informe seu e-mail e sua senha.');
+        return;
+    }
+
+    if (senha.length < 6) {
+        mostrarMensagem('A senha precisa ter pelo menos 6 caracteres.');
+        return;
+    }
+
+    mostrarMensagem('Criando sua conta...');
+
+    const { data, error } = await db.auth.signUp({
+        email: email,
+        password: senha
+    });
+
+    if (error) {
+        mostrarMensagem('Erro ao cadastrar: ' + error.message);
+        return;
+    }
+
+    if (data.session) {
+        await iniciar();
+    } else {
+        mostrarMensagem('Conta criada! Confira seu e-mail para confirmar o cadastro antes de entrar.');
+    }
 }
-async function salvarVeiculo(){
- if(!vcliente.value)return alert("Cadastre um cliente primeiro.");
- await inserir('veiculos',{cliente_id:vcliente.value,marca:vmarca.value,modelo:vmodelo.value,placa:vplaca.value,cor:vcor.value});
+
+async function iniciar() {
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+
+    $('sdata').value = dataHoje();
+    $('mdata').value = dataHoje();
+
+    await carregar();
+    tela('clientes');
 }
-async function salvarServico(){
- if(!scliente.value)return alert("Cadastre um cliente primeiro.");
- await inserir('servicos',{cliente_id:scliente.value,veiculo_id:sveiculo.value||null,descricao:sdesc.value,valor:Number(svalor.value),data:sdata.value,status:sstatus.value,pagamento:spagamento.value});
+
+async function sair() {
+    const { error } = await db.auth.signOut();
+
+    if (error) {
+        alert('Erro ao sair: ' + error.message);
+        return;
+    }
+
+    $('app').classList.add('hidden');
+    $('login').classList.remove('hidden');
+    mostrarMensagem('Você saiu do sistema.');
 }
-async function salvarMovimento(){
- if(!mdesc.value||!Number(mvalor.value))return alert("Preencha descrição e valor.");
- await inserir('movimentacoes',{tipo:mtipo.value,descricao:mdesc.value,categoria:mcat.value,valor:Number(mvalor.value),data:mdata.value,pagamento:mpag.value});
+
+function tela(id) {
+    const telas = [
+        'clientes',
+        'veiculos',
+        'servicos',
+        'movimentos',
+        'historico',
+        'financeiro'
+    ];
+
+    telas.forEach(nome => {
+        $(nome).classList.toggle('hidden', nome !== id);
+    });
 }
-function financeiro(){
- let mes=dataHoje().slice(0,7);
- let entradas=movimentos.filter(x=>x.tipo==='entrada'&&x.data?.startsWith(mes)).reduce((s,x)=>s+Number(x.valor),0);
- let saidas=movimentos.filter(x=>x.tipo==='saida'&&x.data?.startsWith(mes)).reduce((s,x)=>s+Number(x.valor),0);
- resumo.innerText='R$ '+(entradas-saidas).toFixed(2).replace('.',',');
- financeiroLista.innerHTML=`<p>Entradas: R$ ${entradas.toFixed(2)}</p><p>Despesas: R$ ${saidas.toFixed(2)}</p><h2>Lucro: R$ ${(entradas-saidas).toFixed(2)}</h2>`;
+
+async function carregar() {
+    const [c, v, s, m] = await Promise.all([
+        db.from('clientes').select('*'),
+        db.from('veiculos').select('*'),
+        db.from('servicos').select('*'),
+        db.from('movimentacoes').select('*')
+    ]);
+
+    if (c.error || v.error || s.error || m.error) {
+        const erro = c.error || v.error || s.error || m.error;
+        alert('Erro ao carregar os dados: ' + erro.message);
+        return;
+    }
+
+    clientes = c.data || [];
+    veiculos = v.data || [];
+    servicos = s.data || [];
+    movimentos = m.data || [];
+
+    atualizar();
 }
-function historico(){
- historicoLista.innerHTML=servicos.map(x=>`<p>${x.data} | ${x.descricao} | R$ ${x.valor} | ${x.status}</p>`).join('');
+
+function atualizar() {
+    $('listaClientes').innerHTML = clientes.map(x =>
+        `<p>${x.nome} - ${x.telefone || ''}</p>`
+    ).join('');
+
+    $('listaVeiculos').innerHTML = veiculos.map(x =>
+        `<p>${x.marca || ''} ${x.modelo || ''} - ${x.placa || ''}</p>`
+    ).join('');
+
+    const opcoesClientes = clientes.map(x =>
+        `<option value="${x.id}">${x.nome}</option>`
+    ).join('');
+
+    $('vcliente').innerHTML = opcoesClientes;
+    $('scliente').innerHTML = opcoesClientes;
+
+    $('sveiculo').innerHTML = veiculos.map(x =>
+        `<option value="${x.id}">${x.modelo || ''} - ${x.placa || ''}</option>`
+    ).join('');
+
+    $('listaServicos').innerHTML = servicos.map(x =>
+        `<p>${x.descricao || ''} - R$ ${Number(x.valor || 0).toFixed(2)} (${x.status || ''})</p>`
+    ).join('');
+
+    financeiro();
+    historico();
 }
-db.auth.getSession().then(({data})=>{if(data.session)iniciar()});
+
+async function inserir(tabela, dados) {
+    const { error } = await db.from(tabela).insert(dados);
+
+    if (error) {
+        alert('Erro ao salvar: ' + error.message);
+        return false;
+    }
+
+    alert('Registro salvo com sucesso!');
+    await carregar();
+    return true;
+}
+
+async function salvarCliente() {
+    if (!$('cnome').value.trim()) {
+        alert('Informe o nome do cliente.');
+        return;
+    }
+
+    await inserir('clientes', {
+        nome: $('cnome').value.trim(),
+        telefone: $('ctel').value,
+        endereco: $('cend').value,
+        observacoes: $('cobs').value
+    });
+}
+
+async function salvarVeiculo() {
+    if (!$('vcliente').value) {
+        alert('Cadastre um cliente primeiro.');
+        return;
+    }
+
+    if (!$('vmodelo').value.trim()) {
+        alert('Informe o modelo do veículo.');
+        return;
+    }
+
+    await inserir('veiculos', {
+        cliente_id: $('vcliente').value,
+        marca: $('vmarca').value,
+        modelo: $('vmodelo').value,
+        placa: $('vplaca').value,
+        cor: $('vcor').value
+    });
+}
+
+async function salvarServico() {
+    if (!$('scliente').value) {
+        alert('Cadastre um cliente primeiro.');
+        return;
+    }
+
+    if (!$('sdesc').value.trim() || !$('svalor').value) {
+        alert('Informe a descrição e o valor do serviço.');
+        return;
+    }
+
+    await inserir('servicos', {
+        cliente_id: $('scliente').value,
+        veiculo_id: $('sveiculo').value || null,
+        descricao: $('sdesc').value,
+        valor: Number($('svalor').value),
+        data: $('sdata').value,
+        status: $('sstatus').value,
+        pagamento: $('spagamento').value
+    });
+}
+
+async function salvarMovimento() {
+    if (!$('mdesc').value.trim() || !$('mvalor').value) {
+        alert('Preencha a descrição e o valor.');
+        return;
+    }
+
+    await inserir('movimentacoes', {
+        tipo: $('mtipo').value,
+        descricao: $('mdesc').value,
+        categoria: $('mcat').value,
+        valor: Number($('mvalor').value),
+        data: $('mdata').value,
+        pagamento: $('mpag').value
+    });
+}
+
+function financeiro() {
+    const mes = dataHoje().slice(0, 7);
+
+    const entradas = movimentos
+        .filter(x => x.tipo === 'entrada' && String(x.data).startsWith(mes))
+        .reduce((s, x) => s + Number(x.valor || 0), 0);
+
+    const saidas = movimentos
+        .filter(x => x.tipo === 'saida' && String(x.data).startsWith(mes))
+        .reduce((s, x) => s + Number(x.valor || 0), 0);
+
+    const saldo = entradas - saidas;
+
+    $('resumo').innerText = 'R$ ' + saldo.toFixed(2).replace('.', ',');
+
+    $('financeiroLista').innerHTML =
+        `<p>Entradas: R$ ${entradas.toFixed(2).replace('.', ',')}</p>
+         <p>Despesas: R$ ${saidas.toFixed(2).replace('.', ',')}</p>
+         <h2>Saldo: R$ ${saldo.toFixed(2).replace('.', ',')}</h2>`;
+}
+
+function historico() {
+    $('historicoLista').innerHTML = servicos.map(x =>
+        `<p>${x.data || ''} | ${x.descricao || ''} | R$ ${Number(x.valor || 0).toFixed(2)} | ${x.status || ''}</p>`
+    ).join('');
+}
+
+$('sdata').value = dataHoje();
+$('mdata').value = dataHoje();
+
+db.auth.getSession().then(({ data, error }) => {
+    if (error) {
+        mostrarMensagem('Erro ao verificar sessão: ' + error.message);
+        return;
+    }
+
+    if (data.session) {
+        iniciar();
+    }
+});{data})=>{if(data.session)iniciar()});
 </script>
 </body>
   </html>
