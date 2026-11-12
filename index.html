@@ -1,493 +1,290 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WV Lavagem e Estética Automotiva</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101820;color:white;font-family:Arial,sans-serif}
-header{background:#087d55;padding:20px;font-size:20px;font-weight:bold;text-align:center}
-main{padding:15px;max-width:850px;margin:auto}
-.card{background:#1d2935;padding:16px;border-radius:12px;margin:12px 0}
-input,select,button{width:100%;padding:13px;margin:6px 0;border-radius:7px;border:1px solid #465565;font-size:15px}
-input,select{background:#101820;color:white}
-button{background:#087d55;color:white;border:0;font-weight:bold;cursor:pointer}
-nav{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}
-nav button{background:#263746}
-h2{font-size:19px}
-small{color:#b9c7d2}
-.hidden{display:none!important}
-.valor{font-size:25px;color:#45d69c;font-weight:bold}
-.item{background:#263746;padding:10px;margin:8px 0;border-radius:7px;overflow-wrap:anywhere}
-#msg{color:#ffd166}
+header{background:#087d55;padding:20px;text-align:center}
+header h2{margin:0;font-size:21px}
+header p{margin:6px 0 0;font-size:13px}
+main{padding:15px;max-width:650px;margin:auto}
+.card{background:#1d2935;padding:16px;border-radius:12px;margin-bottom:15px}
+h3{margin-top:0;color:#36d69a}
+input,button,select{width:100%;padding:13px;border-radius:8px;border:0;margin:6px 0;font-size:15px}
+input,select{background:#fff;color:#111}
+button{background:#087d55;color:white;font-weight:bold;cursor:pointer}
+button.sec{background:#344555}
+button.del{background:#a83232;width:auto;padding:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.valor{font-size:23px;font-weight:bold;color:#36d69a}
+.item{background:#263746;padding:12px;border-radius:8px;margin:8px 0;overflow-wrap:anywhere}
+.item small{color:#c2d0d9}
+nav{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:15px}
+nav button{margin:0;font-size:13px}
+.secao{display:none}
+.secao.ativa{display:block}
 </style>
 </head>
-
 <body>
-<header>🚘 WV LAVAGEM E ESTÉTICA AUTOMOTIVA</header>
-
+<header>
+<h2>WV Lavagem e Estética Automotiva</h2>
+<p>Meu controle de serviços e financeiro</p>
+</header>
 <main>
 
-<section id="login" class="card">
-<h2>Acesso ao sistema</h2>
-<input id="email" type="email" placeholder="Seu e-mail">
-<input id="senha" type="password" placeholder="Sua senha">
-<button onclick="entrar()">ENTRAR</button>
-<button onclick="cadastrar()">CRIAR CONTA</button>
-<p id="msg"></p>
-</section>
-
-<section id="app" class="hidden">
-
 <div class="card">
-<h2>Bem-vindo à WV!</h2>
-<div id="resumo" class="valor">R$ 0,00</div>
-<small>Saldo das movimentações deste mês</small>
+<h3>Resumo financeiro</h3>
+<div class="grid">
+<div>Hoje<div class="valor" id="hoje">R$ 0,00</div></div>
+<div>Semana<div class="valor" id="semana">R$ 0,00</div></div>
+<div>Mês<div class="valor" id="mes">R$ 0,00</div></div>
+<div>Ano<div class="valor" id="ano">R$ 0,00</div></div>
+</div>
+<hr>
+<p>Despesas do mês: <b id="despesas">R$ 0,00</b></p>
+<p>Lucro do mês: <b id="lucro" class="valor">R$ 0,00</b></p>
 </div>
 
 <nav>
-<button onclick="tela('clientes')">Clientes</button>
-<button onclick="tela('veiculos')">Veículos</button>
-<button onclick="tela('servicos')">Serviços</button>
-<button onclick="tela('movimentos')">Entradas e despesas</button>
-<button onclick="tela('historico')">Histórico</button>
-<button onclick="tela('financeiro')">Financeiro</button>
+<button onclick="abrir('servicos')">+ Nova lavagem</button>
+<button onclick="abrir('gastos')">+ Nova despesa</button>
+<button onclick="abrir('agenda')">Agendamentos</button>
+<button onclick="abrir('historico')">Histórico</button>
 </nav>
 
-<div id="clientes" class="card">
-<h2>Cadastro de clientes</h2>
-<input id="cnome" placeholder="Nome do cliente">
-<input id="ctel" placeholder="Telefone / WhatsApp">
-<input id="cend" placeholder="Endereço">
-<input id="cobs" placeholder="Observações">
-<button onclick="salvarCliente()">Salvar cliente</button>
-<div id="listaClientes"></div>
+<section id="servicos" class="secao ativa">
+<div class="card">
+<h3>Registrar lavagem</h3>
+<form id="formServico">
+<input id="cliente" placeholder="Nome do cliente" required>
+<input id="veiculo" placeholder="Veículo / Modelo" required>
+<input id="placa" placeholder="Placa (opcional)">
+<input id="servico" placeholder="Tipo de lavagem ou serviço" required>
+<input id="valor" type="number" step="0.01" min="0.01" placeholder="Valor recebido R$" required>
+<label>Data do serviço</label>
+<input id="dataServico" type="date" required>
+<button type="submit">SALVAR LAVAGEM</button>
+</form>
 </div>
+</section>
 
-<div id="veiculos" class="card hidden">
-<h2>Cadastro de veículos</h2>
-<select id="vcliente"></select>
-<input id="vmarca" placeholder="Marca">
-<input id="vmodelo" placeholder="Modelo">
-<input id="vplaca" placeholder="Placa">
-<input id="vcor" placeholder="Cor">
-<button onclick="salvarVeiculo()">Salvar veículo</button>
-<div id="listaVeiculos"></div>
+<section id="gastos" class="secao">
+<div class="card">
+<h3>Registrar despesa</h3>
+<form id="formGasto">
+<input id="descricao" placeholder="Descrição da despesa" required>
+<input id="valorGasto" type="number" step="0.01" min="0.01" placeholder="Valor R$" required>
+<label>Data da despesa</label>
+<input id="dataGasto" type="date" required>
+<button type="submit">SALVAR DESPESA</button>
+</form>
 </div>
+</section>
 
-<div id="servicos" class="card hidden">
-<h2>Registrar serviço</h2>
-<select id="scliente"></select>
-<select id="sveiculo"></select>
-<input id="sdesc" placeholder="Descrição do serviço">
-<input id="svalor" type="number" step="0.01" placeholder="Valor R$">
-<input id="sdata" type="date">
-<select id="spagamento">
-<option>Pix</option>
-<option>Dinheiro</option>
-<option>Cartão de crédito</option>
-<option>Cartão de débito</option>
-</select>
-<select id="sstatus">
-<option value="concluido">Concluído</option>
-<option value="pendente">Pendente</option>
-</select>
-<button onclick="salvarServico()">Salvar serviço</button>
+<section id="agenda" class="secao">
+<div class="card">
+<h3>Agendar serviço</h3>
+<form id="formAgenda">
+<input id="nomeAgenda" placeholder="Nome do cliente" required>
+<input id="carroAgenda" placeholder="Veículo" required>
+<input id="tipoAgenda" placeholder="Serviço agendado" required>
+<label>Data</label>
+<input id="dataAgenda" type="date" required>
+<label>Horário</label>
+<input id="horaAgenda" type="time" required>
+<input id="obsAgenda" placeholder="Observações (opcional)">
+<button type="submit">SALVAR AGENDAMENTO</button>
+</form>
+</div>
+<div class="card">
+<h3>Próximos agendamentos</h3>
+<div id="listaAgenda"></div>
+</div>
+</section>
+
+<section id="historico" class="secao">
+<div class="card">
+<h3>Histórico de lavagens</h3>
 <div id="listaServicos"></div>
 </div>
-
-<div id="movimentos" class="card hidden">
-<h2>Entradas e despesas</h2>
-<select id="mtipo">
-<option value="entrada">Entrada</option>
-<option value="saida">Despesa</option>
-</select>
-<input id="mdesc" placeholder="Descrição">
-<input id="mcat" placeholder="Categoria">
-<input id="mvalor" type="number" step="0.01" placeholder="Valor R$">
-<input id="mdata" type="date">
-<select id="mpag">
-<option>Pix</option>
-<option>Dinheiro</option>
-<option>Cartão de crédito</option>
-<option>Cartão de débito</option>
-</select>
-<button onclick="salvarMovimento()">Salvar movimentação</button>
+<div class="card">
+<h3>Histórico de despesas</h3>
+<div id="listaGastos"></div>
 </div>
-
-<div id="historico" class="card hidden">
-<h2>Histórico de serviços</h2>
-<div id="historicoLista"></div>
-</div>
-
-<div id="financeiro" class="card hidden">
-<h2>Resumo financeiro</h2>
-<div id="financeiroLista"></div>
-</div>
-
-<button onclick="sair()">SAIR</button>
 </section>
+
+<div class="card">
+<h3>Backup dos dados</h3>
+<p>Faça uma cópia de segurança para não perder seus registros.</p>
+<button onclick="backup()">BAIXAR BACKUP</button>
+<input type="file" id="arquivoBackup" accept=".json" onchange="restaurar(event)">
+<button class="sec" onclick="document.getElementById('arquivoBackup').click()">RESTAURAR BACKUP</button>
+</div>
+
 </main>
-
 <script>
-const SUPABASE_URL = "https://sryuwgmwrchwpdecdrlr.supabase.co";
-const SUPABASE_KEY = "sb_publishable_rpgId6KOB4tEUsG_COGtEg_tnYya1we";
-
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const $ = id => document.getElementById(id);
-
-let clientes = [];
-let veiculos = [];
-let servicos = [];
-let movimentos = [];
-
-function dataHoje(){
-    const d = new Date();
-    return d.getFullYear() + '-' +
-        String(d.getMonth()+1).padStart(2,'0') + '-' +
-        String(d.getDate()).padStart(2,'0');
+const chave='wv_lavagem_dados_v1';
+let dados;
+try{
+dados=JSON.parse(localStorage.getItem(chave))||{
+servicos:[],gastos:[],agenda:[]
+};
+}catch(e){
+dados={servicos:[],gastos:[],agenda:[]};
 }
-
-function mostrarMensagem(texto){
-    $('msg').textContent = texto;
+function salvar(){
+localStorage.setItem(chave,JSON.stringify(dados));
+atualizar();
 }
-
-function escapar(valor){
-    return String(valor ?? '').replace(/[&<>"']/g, c => ({
-        '&':'&amp;',
-        '<':'&lt;',
-        '>':'&gt;',
-        '"':'&quot;',
-        "'":'&#39;'
-    })[c]);
+function hoje(){
+let d=new Date();
+return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
-
-function dinheiro(valor){
-    return Number(valor || 0).toLocaleString('pt-BR',{
-        style:'currency',
-        currency:'BRL'
-    });
+function dinheiro(v){
+return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 }
-
-async function entrar(){
-    const email = $('email').value.trim();
-    const senha = $('senha').value;
-
-    if(!email || !senha){
-        mostrarMensagem('Informe seu e-mail e sua senha.');
-        return;
-    }
-
-    mostrarMensagem('Entrando...');
-
-    try{
-        const {error} = await db.auth.signInWithPassword({
-            email:email,
-            password:senha
-        });
-
-        if(error){
-            mostrarMensagem('Erro ao entrar: ' + error.message);
-            return;
-        }
-
-        await iniciar();
-    }catch(e){
-        mostrarMensagem('Erro: ' + e.message);
-    }
+function dataValida(s){
+return new Date(s+'T12:00:00');
 }
-
-async function cadastrar(){
-    const email = $('email').value.trim();
-    const senha = $('senha').value;
-
-    if(!email || !senha){
-        mostrarMensagem('Informe seu e-mail e sua senha.');
-        return;
-    }
-
-    if(senha.length < 6){
-        mostrarMensagem('A senha precisa ter pelo menos 6 caracteres.');
-        return;
-    }
-
-    mostrarMensagem('Criando conta...');
-
-    try{
-        const {data,error} = await db.auth.signUp({
-            email:email,
-            password:senha
-        });
-
-        if(error){
-            mostrarMensagem('Erro ao cadastrar: ' + error.message);
-            return;
-        }
-
-        if(data.session){
-            await iniciar();
-        }else{
-            mostrarMensagem('Conta criada! Confira seu e-mail para confirmar o cadastro.');
-        }
-    }catch(e){
-        mostrarMensagem('Erro: ' + e.message);
-    }
+function abrir(id){
+document.querySelectorAll('.secao').forEach(x=>x.classList.remove('ativa'));
+document.getElementById(id).classList.add('ativa');
 }
-
-async function iniciar(){
-    $('login').classList.add('hidden');
-    $('app').classList.remove('hidden');
-
-    $('sdata').value = dataHoje();
-    $('mdata').value = dataHoje();
-
-    await carregar();
-    tela('clientes');
+function soma(lista,inicio,fim){
+return lista.filter(x=>x.data>=inicio&&x.data<=fim)
+.reduce((a,x)=>a+Number(x.valor),0);
 }
-
-async function sair(){
-    const {error} = await db.auth.signOut();
-
-    if(error){
-        alert('Erro ao sair: ' + error.message);
-        return;
-    }
-
-    $('app').classList.add('hidden');
-    $('login').classList.remove('hidden');
-    mostrarMensagem('Você saiu do sistema.');
+function inicioSemana(){
+let d=dataValida(hoje());
+let dia=d.getDay();
+d.setDate(d.getDate()-(dia===0?6:dia-1));
+return d.toISOString().slice(0,10);
 }
-
-function tela(id){
-    const nomes = [
-        'clientes','veiculos','servicos',
-        'movimentos','historico','financeiro'
-    ];
-
-    nomes.forEach(nome=>{
-        $(nome).classList.toggle('hidden',nome !== id);
-    });
-}
-
-async function carregar(){
-    try{
-        const [c,v,s,m] = await Promise.all([
-            db.from('clientes').select('*'),
-            db.from('veiculos').select('*'),
-            db.from('servicos').select('*'),
-            db.from('movimentacoes').select('*')
-        ]);
-
-        const erro = c.error || v.error || s.error || m.error;
-
-        if(erro){
-            alert('Erro ao carregar dados: ' + erro.message);
-            return;
-        }
-
-        clientes = c.data || [];
-        veiculos = v.data || [];
-        servicos = s.data || [];
-        movimentos = m.data || [];
-
-        atualizar();
-    }catch(e){
-        alert('Erro ao carregar: ' + e.message);
-    }
-}
-
 function atualizar(){
-    $('listaClientes').innerHTML = clientes.map(x=>
-        `<div class="item">${escapar(x.nome)} - ${escapar(x.telefone)}</div>`
-    ).join('');
+let h=hoje();
+let ano=h.slice(0,4);
+let mes=h.slice(0,7);
+let semana=inicioSemana();
+let fimSemana=new Date(dataValida(semana));
+fimSemana.setDate(fimSemana.getDate()+6);
+let fim=fimSemana.getFullYear()+'-'+String(fimSemana.getMonth()+1).padStart(2,'0')+'-'+String(fimSemana.getDate()).padStart(2,'0');
+let s=dados.servicos;
+let g=dados.gastos;
+document.getElementById('hoje').textContent=dinheiro(soma(s,h,h));
+document.getElementById('semana').textContent=dinheiro(soma(s,semana,fim));
+document.getElementById('mes').textContent=dinheiro(soma(s,mes+'-01',mes+'-31'));
+document.getElementById('ano').textContent=dinheiro(soma(s,ano+'-01-01',ano+'-12-31'));
+let desp=g.filter(x=>x.data.startsWith(mes)).reduce((a,x)=>a+Number(x.valor),0);
+document.getElementById('despesas').textContent=dinheiro(desp);
+document.getElementById('lucro').textContent=dinheiro(soma(s,mes+'-01',mes+'-31')-desp);
 
-    $('listaVeiculos').innerHTML = veiculos.map(x=>
-        `<div class="item">${escapar(x.marca)} ${escapar(x.modelo)} - ${escapar(x.placa)}</div>`
-    ).join('');
+document.getElementById('listaServicos').innerHTML=s.slice().reverse().map(x=>
+`<div class="item"><b>${x.cliente}</b><br>
+${x.veiculo} ${x.placa?'- '+x.placa:''}<br>
+${x.servico}<br><small>${x.data}</small><br>
+<b>${dinheiro(x.valor)}</b>
+<br><button class="del" onclick="excluir('servicos','${x.id}')">Excluir</button></div>`
+).join('')||'Nenhuma lavagem registrada.';
 
-    const opcoes = clientes.map(x=>
-        `<option value="${escapar(x.id)}">${escapar(x.nome)}</option>`
-    ).join('');
+document.getElementById('listaGastos').innerHTML=g.slice().reverse().map(x=>
+`<div class="item"><b>${x.descricao}</b><br>
+${dinheiro(x.valor)}<br><small>${x.data}</small><br>
+<button class="del" onclick="excluir('gastos','${x.id}')">Excluir</button></div>`
+).join('')||'Nenhuma despesa registrada.';
 
-    $('vcliente').innerHTML = opcoes;
-    $('scliente').innerHTML = opcoes;
-
-    atualizarVeiculos();
-
-    $('listaServicos').innerHTML = servicos.map(x=>
-        `<div class="item">${escapar(x.descricao)} - ${dinheiro(x.valor)} (${escapar(x.status)})</div>`
-    ).join('');
-
-    financeiro();
-    historico();
+document.getElementById('listaAgenda').innerHTML=dados.agenda.slice().sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).map(x=>
+`<div class="item"><b>${x.nome}</b><br>
+${x.carro} - ${x.tipo}<br>
+${x.data} às ${x.hora}<br>
+${x.obs||''}<br>
+<button class="del" onclick="excluir('agenda','${x.id}')">Excluir</button></div>`
+).join('')||'Nenhum agendamento.';
 }
-
-function atualizarVeiculos(){
-    const clienteId = $('scliente').value;
-
-    const lista = veiculos.filter(x=>
-        !clienteId || String(x.cliente_id) === String(clienteId)
-    );
-
-    $('sveiculo').innerHTML =
-        '<option value="">Selecione o veículo</option>' +
-        lista.map(x=>
-            `<option value="${escapar(x.id)}">${escapar(x.modelo)} - ${escapar(x.placa)}</option>`
-        ).join('');
+function excluir(tipo,id){
+if(confirm('Deseja realmente excluir este registro?')){
+dados[tipo]=dados[tipo].filter(x=>x.id!==id);
+salvar();
 }
-
-$('scliente').addEventListener('change',atualizarVeiculos);
-
-async function inserir(tabela,dados){
-    try{
-        const {error} = await db.from(tabela).insert(dados);
-
-        if(error){
-            alert('Erro ao salvar: ' + error.message);
-            return false;
-        }
-
-        alert('Salvo com sucesso!');
-        await carregar();
-        return true;
-    }catch(e){
-        alert('Erro: ' + e.message);
-        return false;
-    }
 }
-
-async function salvarCliente(){
-    if(!$('cnome').value.trim()){
-        alert('Informe o nome do cliente.');
-        return;
-    }
-
-    const ok = await inserir('clientes',{
-        nome:$('cnome').value.trim(),
-        telefone:$('ctel').value,
-        endereco:$('cend').value,
-        observacoes:$('cobs').value
-    });
-
-    if(ok){
-        ['cnome','ctel','cend','cobs'].forEach(id=>$(id).value='');
-    }
-}
-
-async function salvarVeiculo(){
-    if(!$('vcliente').value){
-        alert('Cadastre um cliente primeiro.');
-        return;
-    }
-
-    if(!$('vmodelo').value.trim()){
-        alert('Informe o modelo do veículo.');
-        return;
-    }
-
-    const ok = await inserir('veiculos',{
-        cliente_id:$('vcliente').value,
-        marca:$('vmarca').value,
-        modelo:$('vmodelo').value,
-        placa:$('vplaca').value,
-        cor:$('vcor').value
-    });
-
-    if(ok){
-        ['vmarca','vmodelo','vplaca','vcor'].forEach(id=>$(id).value='');
-    }
-}
-
-async function salvarServico(){
-    if(!$('scliente').value){
-        alert('Selecione um cliente.');
-        return;
-    }
-
-    if(!$('sdesc').value.trim() || !$('svalor').value){
-        alert('Informe a descrição e o valor.');
-        return;
-    }
-
-    const ok = await inserir('servicos',{
-        cliente_id:$('scliente').value,
-        veiculo_id:$('sveiculo').value || null,
-        descricao:$('sdesc').value,
-        valor:Number($('svalor').value),
-        data:$('sdata').value,
-        status:$('sstatus').value,
-        pagamento:$('spagamento').value
-    });
-
-    if(ok){
-        ['sdesc','svalor'].forEach(id=>$(id).value='');
-    }
-}
-
-async function salvarMovimento(){
-    if(!$('mdesc').value.trim() || !$('mvalor').value){
-        alert('Preencha a descrição e o valor.');
-        return;
-    }
-
-    const ok = await inserir('movimentacoes',{
-        tipo:$('mtipo').value,
-        descricao:$('mdesc').value,
-        categoria:$('mcat').value,
-        valor:Number($('mvalor').value),
-        data:$('mdata').value,
-        pagamento:$('mpag').value
-    });
-
-    if(ok){
-        ['mdesc','mcat','mvalor'].forEach(id=>$(id).value='');
-    }
-}
-
-function financeiro(){
-    const mes = dataHoje().slice(0,7);
-
-    const entradas = movimentos
-        .filter(x=>x.tipo==='entrada' && String(x.data).startsWith(mes))
-        .reduce((s,x)=>s+Number(x.valor || 0),0);
-
-    const saidas = movimentos
-        .filter(x=>x.tipo==='saida' && String(x.data).startsWith(mes))
-        .reduce((s,x)=>s+Number(x.valor || 0),0);
-
-    const saldo = entradas-saidas;
-
-    $('resumo').textContent = dinheiro(saldo);
-
-    $('financeiroLista').innerHTML =
-        `<div class="item">Entradas: ${dinheiro(entradas)}</div>
-         <div class="item">Despesas: ${dinheiro(saidas)}</div>
-         <div class="item">Saldo: ${dinheiro(saldo)}</div>`;
-}
-
-function historico(){
-    $('historicoLista').innerHTML = servicos.map(x=>
-        `<div class="item">${escapar(x.data)} | ${escapar(x.descricao)} | ${dinheiro(x.valor)} | ${escapar(x.status)}</div>`
-    ).join('');
-}
-
-$('sdata').value = dataHoje();
-$('mdata').value = dataHoje();
-
-db.auth.getSession().then(({data,error})=>{
-    if(error){
-        mostrarMensagem('Erro ao verificar sessão: ' + error.message);
-        return;
-    }
-
-    if(data.session){
-        iniciar();
-    }
+document.getElementById('formServico').addEventListener('submit',e=>{
+e.preventDefault();
+dados.servicos.push({
+id:Date.now().toString(),
+cliente:cliente.value,
+veiculo:veiculo.value,
+placa:placa.value,
+servico:servico.value,
+valor:Number(valor.value),
+data:dataServico.value
 });
+e.target.reset();
+dataServico.value=hoje();
+salvar();
+alert('Lavagem salva com sucesso!');
+});
+document.getElementById('formGasto').addEventListener('submit',e=>{
+e.preventDefault();
+dados.gastos.push({
+id:Date.now().toString(),
+descricao:descricao.value,
+valor:Number(valorGasto.value),
+data:dataGasto.value
+});
+e.target.reset();
+dataGasto.value=hoje();
+salvar();
+alert('Despesa salva com sucesso!');
+});
+document.getElementById('formAgenda').addEventListener('submit',e=>{
+e.preventDefault();
+dados.agenda.push({
+id:Date.now().toString(),
+nome:nomeAgenda.value,
+carro:carroAgenda.value,
+tipo:tipoAgenda.value,
+data:dataAgenda.value,
+hora:horaAgenda.value,
+obs:obsAgenda.value
+});
+e.target.reset();
+dataAgenda.value=hoje();
+salvar();
+alert('Agendamento salvo!');
+});
+function backup(){
+let arquivo=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
+let url=URL.createObjectURL(arquivo);
+let a=document.createElement('a');
+a.href=url;
+a.download='backup-wv-lavagem.json';
+a.click();
+URL.revokeObjectURL(url);
+}
+function restaurar(e){
+let arquivo=e.target.files[0];
+if(!arquivo)return;
+let leitor=new FileReader();
+leitor.onload=()=>{
+try{
+let novo=JSON.parse(leitor.result);
+if(!Array.isArray(novo.servicos)||!Array.isArray(novo.gastos)||!Array.isArray(novo.agenda))throw Error();
+if(confirm('Restaurar backup? Os dados atuais serão substituídos.')){
+dados=novo;
+salvar();
+alert('Backup restaurado!');
+}
+}catch(err){alert('Arquivo de backup inválido.');}
+};
+leitor.readAsText(arquivo);
+}
+dataServico.value=hoje();
+dataGasto.value=hoje();
+dataAgenda.value=hoje();
+atualizar();
 </script>
 </body>
 </html>
