@@ -1,1 +1,21 @@
 
+
+{
+  "name": "WV Lavagem e Estética Automotiva",
+  "short_name": "WV Lavagem",
+  "description": "Sistema de gestão da WV Lavagem e Estética Automotiva",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101820",
+  "theme_color": "#087d55",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
