@@ -32,6 +32,15 @@ nav button{margin:0;font-size:13px}
 <meta name="theme-color" content="#087d55">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 </head>
+  <script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("Aplicativo conectado!"))
+      .catch(error => console.log("Erro:", error));
+  });
+}
+  </script>
 <body>
 <header>
 <h2>WV Lavagem e Estética Automotiva</h2>
